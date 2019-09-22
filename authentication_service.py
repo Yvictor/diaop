@@ -7,24 +7,24 @@ class AuthenticationService:
     def __init__(self) -> None:
         pass
 
-    def verify(self, account: str, password: str, otp: str) -> bool:
+    def verify(self, account_id: str, password: str, otp: str) -> bool:
+        connect = sqlite3.connect('connecthost')
+        password1 = connect.execute(f"spGetUserPassword{account_id}").fetchone()
+        password_from_db = password1
+        hashobj = hashlib.sha256(password.encode('utf8'))
+        hashed_password = hashobj.hexdigest()
+        conn = http.client.HTTPSConnection("yvictor.com")
+        response = conn.request("POST", "/api/otps", account_id).getresponse()
+        if response.status == 200:
+            result = response.plain_text
+        else:
+            raise Exception(f"web api error, accountId:{account_id}")
+        current_opt = result
+        if (password_from_db == hashed_password) and (current_opt == otp):
+            return True
+        else:
+            return False
 
-        raise NotImplementedError()
 
-
-def get_password(account_id: str) -> str:
-    connect = sqlite3.connect('connecthost')
-    password = connect.execute("spGetUserPassword").fetchone()
-    return password
-
-def get_hash(plain_text: str) -> str:
-    hashobj = hashlib.sha256(plain_text.encode('utf8'))
-    return hashobj.hexdigest()
-
-def get_otp(account_id: str) -> str:
-    conn = http.client.HTTPSConnection("yvictor.com")
-    response = conn.request("POST", "/api/otps", account_id).getresponse()
-    if response.status == 200:
-        return response.plain_text
-    else:
-        raise Exception(f"web api error, accountId:{account_id}")
+if __name__ == "__main__":
+    pass
